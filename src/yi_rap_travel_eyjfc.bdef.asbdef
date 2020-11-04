@@ -1,16 +1,18 @@
 managed;
+with draft;
 
 define behavior for YI_RAP_Travel_eyjfc alias Travel
 implementation in class ybp_i_rap_travel_eyjfc unique
 persistent table yrap_atrav_eyjfc
-lock master
-//authorization master ( instance )
+draft table yrap_dtrav_eyjfc
+lock master total etag LastChangedAt
+authorization master ( instance )
 etag master LocalLastChangedAt
 {
   create;
   update;
   delete;
-  association _Booking { create; }
+  association _Booking { create; with draft; }
 
   field ( numbering : managed, readonly ) TravelUUID;
   field ( readonly ) TravelId, TotalPrice, TravelStatus;
@@ -28,6 +30,12 @@ etag master LocalLastChangedAt
   validation validateAgency on save { field AgencyId; create; }
   validation validateCustomer  on save { field CustomerId; create; }
   validation validateDates on save { field BeginDate, EndDate; create; }
+
+  draft determine action Prepare {
+    validation validateAgency;
+    validation validateCustomer;
+    validation validateDates;
+  }
 
   mapping for yrap_atrav_eyjfc
   {
@@ -53,13 +61,14 @@ etag master LocalLastChangedAt
 define behavior for yI_RAP_Booking_eyjfc alias Booking
 implementation in class ybp_i_rap_booking_eyjfc unique
 persistent table yrap_abook_eyjfc
+draft table yrap_dbook_eyjfc
 lock dependent by _Travel
-//authorization dependent by <association>
+authorization dependent by _Travel
 etag master LocalLastChangedAt
 {
   update;
   delete;
-  association _Travel;
+  association _Travel { with draft; }
 
   field ( numbering : managed, readonly ) BookingUUID;
   field ( readonly ) TravelUUID, BookingId;
